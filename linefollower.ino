@@ -16,18 +16,18 @@ AF_DCMotor motor2(2, MOTOR12_1KHZ ); //create motor #2 using M2 output on Motor 
 #define EMITTER_PIN 2         //emitterPin is the Arduino digital pin that controls whether the IR LEDs are on or off. Emitter is controlled by digital pin 2
 #define DEBUG 0
 #define THRESHOLD 750
-#define BASE 60
+#define BASE 40
 #define DIVIDER 1.3
 
 
 //sensors 0 through 5 are connected to analog inputs 0 through 5, respectively
 QTRSensorsRC qtrrc((unsigned char[]) { A5, A4, A3, A2, A1, A0} ,NUM_SENSORS, TIMEOUT, EMITTER_PIN);
-  
+
 void setup()
 { 
 Serial.begin(9600);
-//manual_calibration();
-//qtrrc.emittersOn();
+manual_calibration();
+
 set_motors(0,0);
 }
   
@@ -38,30 +38,28 @@ unsigned int sensors[NUM_SENSORS];
 
 qtrrc.read(sensors);
 
-unsigned int line[NUM_SENSORS];
+double line[NUM_SENSORS];
 
 for (int i = 0; i < NUM_SENSORS; i++)
 {
-if (sensors[i] > THRESHOLD) {
-  line[i] = 1;
-} else {
-  line[i]= 0;
+  line[i] = ((double)sensors[i]-400.)/2000.;
+  Serial.print((String)line[i]+" ");
 }
-}
+Serial.println();
 
 int dir = 0;
 
-if (line[0]) dir += 30;
-if (line[1]) dir += 20;
-if (line[2]) dir += 10;
+dir += line[0] * 20;
+dir += line[1] * 10;
+dir += line[2] * 13;
 
-if (line[3]) dir -= 10;
-if (line[4]) dir -= 20;
-if (line[5]) dir -= 30;
+dir -= line[3] * 13;
+dir -= line[4] * 10;
+dir -= line[5] * 20;
 
 int leftSpeed=BASE+dir;
 int rightSpeed=BASE-dir;
-
+/*
 String debugOut = "";
 debugOut += (String)line[0]+" ";
 debugOut += (String)line[1]+" ";
@@ -74,22 +72,22 @@ debugOut += (String)dir+" ";
 debugOut += (String)leftSpeed+" ";
 debugOut += (String)rightSpeed+" ";
 
-Serial.println(debugOut);
+Serial.println(debugOut);*/
 
 set_motors(leftSpeed/DIVIDER, rightSpeed/DIVIDER);
 
 //int error = position - 2000;
 //int motorSpeed = KP * error + KD * (error - lastError);
 //set_motors(leftMotorSpeed, rightMotorSpeed);
-//set_motors(200, 0);
+//set_motors(0, 0);
 }
   
 void set_motors(int motor1speed, int motor2speed)
 { 
 //if (motor1speed > M1_maksimum_speed ) motor1speed = M1_maksimum_speed;
 //if (motor2speed > M2_maksimum_speed ) motor2speed = M2_maksimum_speed;
-//if (motor1speed < 0) motor1speed = 0; 
-//if (motor2speed < 0) motor2speed = 0; 
+if (motor1speed < 0) motor1speed = 0; 
+if (motor2speed < 0) motor2speed = 0; 
 motor1.setSpeed(motor1speed); 
 motor2.setSpeed(motor2speed);
 motor1.run(BACKWARD); 
