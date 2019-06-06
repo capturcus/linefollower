@@ -4,17 +4,20 @@
 AF_DCMotor motor1(1, MOTOR12_1KHZ ); //create motor #1 using M1 output on Motor Drive Shield, set to 1kHz PWM frequency
 AF_DCMotor motor2(2, MOTOR12_1KHZ ); //create motor #2 using M2 output on Motor Drive Shield, set to 1kHz PWM frequency
 
-#define KP 5 //experiment to determine this, start by something small that just makes your bot follow the line at a slow speed
-#define KD 15 //experiment to determine this, slowly increase the speeds and adjust this value. ( Note: Kp < Kd) 
+#define KP 9 //experiment to determine this, start by something small that just makes your bot follow the line at a slow speed
+#define KD 24 //experiment to determine this, slowly increase the speeds and adjust this value. ( Note: Kp < Kd) 
 //#define M1_base_speed 40  //minimum speed of the Motor1
 //#define M2_base_speed 40  //minimum speed of the Motor2
-#define base_speed 46
+#define base_speed 50
 #define M1_maksimum_speed 130 //max. speed of the Motor1
 #define M2_maksimum_speed 130 //max. speed of the Motor2
 #define NUM_SENSORS 6         //number of sensors used
 #define TIMEOUT 2500          //waits for 2500 us for sensor outputs to go low
 #define EMITTER_PIN 2         //emitterPin is the Arduino digital pin that controls whether the IR LEDs are on or off. Emitter is controlled by digital pin 2
 #define DEBUG 0
+#define TURN_LENGTH 10
+#define TURN_THRESHOLD 2000
+#define CONSTANT_TURN 80
 
 
 //sensors 0 through 5 are connected to analog inputs 0 through 5, respectively
@@ -24,6 +27,7 @@ QTRSensorsRC qtrrc((unsigned char[]) {
 
 void setup()
 {
+  //cześć
   Serial.begin(9600);
   manual_calibration();
 
@@ -31,6 +35,8 @@ void setup()
 }
 
 int lastError = 0;
+int turnLoops = 0;
+int turnDir = 0;
 
 void loop()
 {
@@ -44,15 +50,37 @@ void loop()
   int leftMotorSpeed = base_speed + motorSpeed;
   int rightMotorSpeed = base_speed - motorSpeed;
 
+  if (abs(error) > TURN_THRESHOLD) {
+    turnLoops = TURN_LENGTH;
+    if (abs(motorSpeed) > 0) {
+      turnDir = 1;
+      qtrrc.hackSetLastValue(0);
+    } else {
+      turnDir = -1;
+      qtrrc.hackSetLastValue(5000);
+    }
+  }
+
   // set motor speeds using the two motor speed variables above
-  set_motors(leftMotorSpeed, rightMotorSpeed);
+  if (turnLoops == 0) {
+//    set_motors(leftMotorSpeed, rightMotorSpeed);
+  } else {
+    Serial.println("EXTREME TURN "+(String)turnLoops);
+    //    turnLoops = 0;
+    if  (turnDir > 0) {
+//      set_motors(CONSTANT_TURN, 0);
+    } else {
+//      set_motors(0, CONSTANT_TURN);
+    }
+    turnLoops--;
+  }
 
   String debugOut;
   debugOut += (String)error + " ";
   debugOut += (String)motorSpeed + " ";
   debugOut += (String)leftMotorSpeed + " ";
   debugOut += (String)rightMotorSpeed + " ";
-  Serial.println(debugOut);
+//  Serial.println(debugOut);
 }
 
 void set_motors(int motor1speed, int motor2speed)
