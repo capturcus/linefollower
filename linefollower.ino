@@ -34,8 +34,13 @@ int lastError = 0;
 
 void loop()
 {
+  
   unsigned int sensors[NUM_SENSORS];
-  int position = qtrrc.readLine(sensors); //get calibrated readings along with the line position, refer to the QTR Sensors Arduino Library for more details on line position.
+  int sensorsCalib[NUM_SENSORS] = {0};
+  qtrrc.readCalibrated(sensors);
+  if(!(sensors[NUM_SENSORS/2] < 500 || sensors[(NUM_SENSORS+1)/2] < 500)){
+    int position = qtrrc.readLine(sensors); //get calibrated readings along with the line position, refer to the QTR Sensors Arduino Library for more details on line position.
+  }
   int error = -(position - 2500);
 
   int motorSpeed = ((double)(KP * error + KD * (error - lastError))) / 100.;
